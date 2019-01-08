@@ -29,7 +29,9 @@ func (self *Demuxer) Streams() (streams []av.CodecData, err error) {
 		return
 	}
 	for _, stream := range self.streams {
-		streams = append(streams, stream.CodecData)
+		if stream.CodecData != nil {
+			streams = append(streams, stream.CodecData)
+		}
 	}
 	return
 }
@@ -221,7 +223,8 @@ func (self *Stream) isSampleValid() bool {
 	}
 	if self.sample.SampleSize.SampleSize != 0 {
 		if self.sampleIndex >= len(self.sample.SampleSize.Entries) {
-			return false
+			// return false for sampleIndex > len(self.sample.SampleSize.Entries)
+			return true
 		}
 	}
 	return true
