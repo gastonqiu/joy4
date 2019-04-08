@@ -25,9 +25,8 @@ func NewDemuxer(r io.ReadSeeker) *Demuxer {
 }
 
 func (self *Demuxer) Streams() (streams []av.CodecData, err error) {
-	if err = self.probe(); err != nil {
-		return
-	}
+	err = self.probe()
+
 	for _, stream := range self.streams {
 		if stream.CodecData != nil {
 			streams = append(streams, stream.CodecData)
@@ -73,6 +72,7 @@ func (self *Demuxer) probe() (err error) {
 	}
 
 	self.streams = []*Stream{}
+	var h264ParseErr, audioParseErr error
 	for i, atrack := range moov.Tracks {
 		stream := &Stream{
 			trackAtom: atrack,
@@ -88,16 +88,18 @@ func (self *Demuxer) probe() (err error) {
 		}
 
 		if avc1 := atrack.GetAVC1Conf(); avc1 != nil {
-			if stream.CodecData, err = h264parser.NewCodecDataFromAVCDecoderConfRecord(avc1.Data); err != nil {
-				return
-			}
+			stream.CodecData, h264ParseErr = h264parser.NewCodecDataFromAVCDecoderConfRecord(avc1.Data)
 			self.streams = append(self.streams, stream)
 		} else if esds := atrack.GetElemStreamDesc(); esds != nil {
-			if stream.CodecData, err = aacparser.NewCodecDataFromMPEG4AudioConfigBytes(esds.DecConfig); err != nil {
-				return
-			}
+			stream.CodecData, audioParseErr = aacparser.NewCodecDataFromMPEG4AudioConfigBytes(esds.DecConfig)
 			self.streams = append(self.streams, stream)
 		}
+	}
+
+	if h264ParseErr != nil {
+		err = h264ParseErr
+	} else if audioParseErr != nil {
+		err = audioParseErr
 	}
 
 	self.movieAtom = moov

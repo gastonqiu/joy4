@@ -534,7 +534,7 @@ func NewCodecDataFromAVCDecoderConfRecord(record []byte) (self CodecData, err er
 		return
 	}
 	if len(self.RecordInfo.SPS) == 0 {
-		// err = fmt.Errorf("h264parser: no SPS found in AVCDecoderConfRecord")
+		err = fmt.Errorf("h264parser: no SPS found in AVCDecoderConfRecord")
 		return
 	}
 	if len(self.RecordInfo.PPS) == 0 {
